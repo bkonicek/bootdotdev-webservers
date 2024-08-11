@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+const templateDir = "./templates/"
+
 type apiConfig struct {
 	fileserverHits int
 }
@@ -21,9 +23,9 @@ func main() {
 			http.FileServer(http.Dir(rootPath)),
 		),
 	))
-	mux.HandleFunc("GET /healthz", readinessHandler)
-	mux.HandleFunc("GET /metrics", apiMetrics.metricsHandler)
-	mux.HandleFunc("/reset", apiMetrics.metricsResetHandler)
+	mux.HandleFunc("GET /api/healthz", readinessHandler)
+	mux.HandleFunc("GET /admin/metrics", apiMetrics.metricsHandler)
+	mux.HandleFunc("GET /api/reset", apiMetrics.metricsResetHandler)
 
 	server := &http.Server{
 		Handler: mux,

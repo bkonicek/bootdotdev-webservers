@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 )
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -13,7 +15,14 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (cfg *apiConfig) metricsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits)))
+	templateFilePath := templateDir + "metrics.html"
+	tmpl, err := os.ReadFile(templateFilePath)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	w.Header().Add("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(string(tmpl), cfg.fileserverHits)))
 }
 
 func (cfg *apiConfig) metricsResetHandler(w http.ResponseWriter, r *http.Request) {
