@@ -11,10 +11,8 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 		Body string `json:"body"`
 	}
 	type returnVals struct {
-		Valid bool `json:"valid"`
-	}
-	type errorVals struct {
-		Error string `json:"error"`
+		Valid bool   `json:"valid,omitempty"`
+		Error string `json:"error,omitempty"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -22,38 +20,25 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	params := parameters{}
-	err := decoder.Decode(&params)
-
-	if err != nil {
+	if err := decoder.Decode(&params); err != nil {
 		log.Printf("Error decoding parameters: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
+	resp := returnVals{}
 	// Check chirp length doesn't exceed limit
 	if len(params.Body) > 140 {
-		respBody := errorVals{
-			Error: "Chirp is too long",
-		}
-		dat, err := json.Marshal(respBody)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		resp.Error = "Chirp is too long"
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(dat)
 	} else {
-		respBody := returnVals{
-			Valid: true,
-		}
-		dat, err := json.Marshal(respBody)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		resp.Valid = true
 		w.WriteHeader(http.StatusOK)
-		w.Write(dat)
 	}
+	dat, err := json.Marshal(resp)
+	if err != nil {
+		log.Printf("Error encoding response: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+	w.Write(dat)
 }
