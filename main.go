@@ -18,14 +18,12 @@ func main() {
 	apiMetrics := &apiConfig{}
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/*", http.StripPrefix(
-		"/app", apiMetrics.middlewareMetricsInc(
-			http.FileServer(http.Dir(rootPath)),
-		),
-	))
+	filesystemHandler := apiMetrics.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(rootPath))))
+	mux.Handle("/app/*", filesystemHandler)
 	mux.HandleFunc("GET /api/healthz", readinessHandler)
 	mux.HandleFunc("GET /admin/metrics", apiMetrics.metricsHandler)
 	mux.HandleFunc("GET /api/reset", apiMetrics.metricsResetHandler)
+	mux.HandleFunc("POST /api/validate_chirp", validateChirpHandler)
 
 	server := &http.Server{
 		Handler: mux,
